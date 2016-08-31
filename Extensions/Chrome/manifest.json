@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "GitHub for Chrome",
+  "description": "Intelligent bookmarks from your browser history.",
+  "version": "1.0",
+  "icons": {
+    "32": "images/github-32.png",
+    "64": "images/github-64.png",
+    "120": "images/github-120.png"
+  },
+  "browser_action": {
+    "default_icon": "images/github-64.png",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "history",
+    "storage",
+    "tabs"
+  ]
+}
