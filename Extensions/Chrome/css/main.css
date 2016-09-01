@@ -2,7 +2,7 @@ body {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow-x: hidden;
-  width: 22em;
+  width: 100%;
   margin: 0;
   padding: 0;
 }
