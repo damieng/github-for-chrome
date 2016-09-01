@@ -12,7 +12,13 @@
     "default_icon": "images/github-64.png",
     "default_popup": "popup.html"
   },
+  "background": {
+    "scripts": [
+      "js/background.js"
+    ]
+  },
   "permissions": [
+    "background",
     "history",
     "storage",
     "tabs"

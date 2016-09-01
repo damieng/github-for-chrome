@@ -1,7 +1,8 @@
 const path = require('path');
 
 module.exports = {
-  entry: path.resolve('Extensions/Chrome/popup.js'),
+  entry: path.resolve('Extensions/Chrome/js/popup.js'),
+  devtool: 'source-map',
   output: {
     path: path.resolve('Extensions/Chrome/dist'),
     filename: 'bundle.js'
