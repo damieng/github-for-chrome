@@ -20,45 +20,53 @@ class Popup extends Component {
   }
 
   render() {
-    console.log(background)
     const data = background.data
-    if (data === undefined || data == null || !data.isLoaded)
-      return renderLoading();
+    if (data === undefined || data == null || !data.isLoaded) {
+      console.log('data not ready')
+      return this.renderLoading();
+    }
 
     return this.renderOrgList(data.orgs)
   }
 
   renderLoading() {
-    return (
-      <div className="loading">Loading...</div>
-    )
+    return (<div className="loading">Loading...</div>)
   }
 
   renderOrgList(orgs) {
     return (
       <ol className='orgs'>
-      {
-        this.getOrgKeys(orgs).map((o) =>
-            <li key={o}>
-              <a href={`https://github.com/${o}`} target="_blank">{o}</a>{
-                this.renderSingleRepoOrList(orgs[o])
-            }
+        {this.getSortedKeys(orgs).map((orgKey) =>
+            <li key={orgKey}>
+              <a href={`https://github.com/${orgKey}`} target="_blank">{orgKey}</a>
+                {this.renderSingleRepoOrList(orgs[orgKey])}
             </li>
-        )
-      }
+        )}
       </ol>
     )
   }
 
   renderSingleRepoOrList(org) {
-    var repoKeys = this.getRepoKeys(org)
+    var repoKeys = this.getSortedKeys(org.repos)
     if (repoKeys.length === 1)
-      return (
-        <a className={'single'} href={this.makeLink(org, repoKeys[0])} target="_blank">{repoKeys[0]}</a>
-      )
+      return (<a className={'single'} href={this.makeLink(org, repoKeys[0])} target="_blank">{repoKeys[0]}</a>)
     else {
-      return this.renderRepoList(org)
+      return this.renderRepoList(org, repoKeys)
     }
+  }
+
+  renderRepoList(org, repoKeys) {
+    return
+      (<ol className={'repos'}>
+        {repoKeys.map((repo) =>
+          <li key={repo}>{this.renderRepo(org, repo)}</li>
+        )}
+      </ol>)
+  }
+
+  renderRepo(org, repo) {
+    const sectionKeys = Object.keys(repo)
+    return (<a href={this.makeLink(org, repo)} target="_blank">{repo}</a>)
   }
 
   makeLink(org, repo) {
@@ -66,30 +74,10 @@ class Popup extends Component {
     return `https://github.com/${parts}`
   }
 
-  renderRepoList(org) {
-    return (<ol className={'repos'}>{
-      this.getRepoKeys(org).map((r) =>
-        <li key={r}>
-          <a href={this.makeLink(org, r)} target="_blank">{r}</a>
-        </li>
-      )
-    }</ol>)
-  }
-
-  setSelected(e) {
-    console.log(e)
-  }
-
-  getOrgKeys(orgs) {
-    const orgsKeys = Object.keys(orgs)
-    orgsKeys.sort((a, b)  => a.toLowerCase().localeCompare(b.toLowerCase()))
-    return orgsKeys
-  }
-
-  getRepoKeys(org) {
-    const repoKeys = Object.keys(org.repos)
-    repoKeys.sort((a, b)  => a.toLowerCase().localeCompare(b.toLowerCase()))
-    return repoKeys
+  getSortedKeys(obj) {
+    const keys = Object.keys(obj)
+    keys.sort((a, b)  => a.toLowerCase().localeCompare(b.toLowerCase()))
+    return keys
   }
 }
 

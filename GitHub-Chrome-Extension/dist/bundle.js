@@ -100,9 +100,11 @@
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      console.log(background);
 	      var data = background.data;
-	      if (data === undefined || data == null || !data.isLoaded) return renderLoading();
+	      if (data === undefined || data == null || !data.isLoaded) {
+	        console.log('data not ready');
+	        return this.renderLoading();
+	      }
 	
 	      return this.renderOrgList(data.orgs);
 	    }
@@ -123,16 +125,16 @@
 	      return _react2.default.createElement(
 	        'ol',
 	        { className: 'orgs' },
-	        this.getOrgKeys(orgs).map(function (o) {
+	        this.getSortedKeys(orgs).map(function (orgKey) {
 	          return _react2.default.createElement(
 	            'li',
-	            { key: o },
+	            { key: orgKey },
 	            _react2.default.createElement(
 	              'a',
-	              { href: 'https://github.com/' + o, target: '_blank' },
-	              o
+	              { href: 'https://github.com/' + orgKey, target: '_blank' },
+	              orgKey
 	            ),
-	            _this3.renderSingleRepoOrList(orgs[o])
+	            _this3.renderSingleRepoOrList(orgs[orgKey])
 	          );
 	        })
 	      );
@@ -140,14 +142,42 @@
 	  }, {
 	    key: 'renderSingleRepoOrList',
 	    value: function renderSingleRepoOrList(org) {
-	      var repoKeys = this.getRepoKeys(org);
+	      var repoKeys = this.getSortedKeys(org.repos);
 	      if (repoKeys.length === 1) return _react2.default.createElement(
 	        'a',
 	        { className: 'single', href: this.makeLink(org, repoKeys[0]), target: '_blank' },
 	        repoKeys[0]
 	      );else {
-	        return this.renderRepoList(org);
+	        return this.renderRepoList(org, repoKeys);
 	      }
+	    }
+	  }, {
+	    key: 'renderRepoList',
+	    value: function renderRepoList(org, repoKeys) {
+	      var _this4 = this;
+	
+	      return;
+	      _react2.default.createElement(
+	        'ol',
+	        { className: 'repos' },
+	        repoKeys.map(function (repo) {
+	          return _react2.default.createElement(
+	            'li',
+	            { key: repo },
+	            _this4.renderRepo(org, repo)
+	          );
+	        })
+	      );
+	    }
+	  }, {
+	    key: 'renderRepo',
+	    value: function renderRepo(org, repo) {
+	      var sectionKeys = Object.keys(repo);
+	      return _react2.default.createElement(
+	        'a',
+	        { href: this.makeLink(org, repo), target: '_blank' },
+	        repo
+	      );
 	    }
 	  }, {
 	    key: 'makeLink',
@@ -156,48 +186,13 @@
 	      return 'https://github.com/' + parts;
 	    }
 	  }, {
-	    key: 'renderRepoList',
-	    value: function renderRepoList(org) {
-	      var _this4 = this;
-	
-	      return _react2.default.createElement(
-	        'ol',
-	        { className: 'repos' },
-	        this.getRepoKeys(org).map(function (r) {
-	          return _react2.default.createElement(
-	            'li',
-	            { key: r },
-	            _react2.default.createElement(
-	              'a',
-	              { href: _this4.makeLink(org, r), target: '_blank' },
-	              r
-	            )
-	          );
-	        })
-	      );
-	    }
-	  }, {
-	    key: 'setSelected',
-	    value: function setSelected(e) {
-	      console.log(e);
-	    }
-	  }, {
-	    key: 'getOrgKeys',
-	    value: function getOrgKeys(orgs) {
-	      var orgsKeys = Object.keys(orgs);
-	      orgsKeys.sort(function (a, b) {
+	    key: 'getSortedKeys',
+	    value: function getSortedKeys(obj) {
+	      var keys = Object.keys(obj);
+	      keys.sort(function (a, b) {
 	        return a.toLowerCase().localeCompare(b.toLowerCase());
 	      });
-	      return orgsKeys;
-	    }
-	  }, {
-	    key: 'getRepoKeys',
-	    value: function getRepoKeys(org) {
-	      var repoKeys = Object.keys(org.repos);
-	      repoKeys.sort(function (a, b) {
-	        return a.toLowerCase().localeCompare(b.toLowerCase());
-	      });
-	      return repoKeys;
+	      return keys;
 	    }
 	  }]);
 	
@@ -21656,10 +21651,18 @@
 	        this.orgs[v.org] = org;
 	      }
 	
+	      var repo = null;
 	      if (v.repo in org) {
-	        org.repos[v.repo].push(v);
+	        repo = org.repos[v.repo];
 	      } else {
-	        org.repos[v.repo] = [v];
+	        repo = org.repos[v.repo] = {};
+	      }
+	
+	      var section = null;
+	      if (v.section in repo) {
+	        repo[v.section].push(v);
+	      } else {
+	        repo[v.section] = [v];
 	      }
 	
 	      this.visits.push(v);

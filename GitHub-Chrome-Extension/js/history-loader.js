@@ -55,10 +55,19 @@ export default class HistoryLoader {
       this.orgs[v.org] = org
     }
 
+    let repo = null
     if (v.repo in org) {
-      org.repos[v.repo].push(v)
+      repo = org.repos[v.repo]
     } else {
-      org.repos[v.repo] = [ v ]
+      repo = org.repos[v.repo] = { }
+    }
+
+    let section = null
+    if (v.section in repo) {
+      repo[v.section].push(v)
+    }
+    else {
+      repo[v.section] = [ v ]
     }
 
     this.visits.push(v)
