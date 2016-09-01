@@ -1,10 +1,24 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 
-class RepoList extends Component {
+const background = chrome.extension.getBackgroundPage();
+
+class Popup extends Component {
+  componentWillMount() {
+    this.backgroundSubscription = background.addEventListener('onHistoryLoaded', (e) => this.forceUpdate())
+  }
+
+  componentWillUnmount() {
+    if (this.backgroundSubscription != null) {
+      this.background.removeEventListener('onHistoryLoaded', backgroundSubscription)
+      this.backgroundSubscription = null
+    }
+  }
+
   render() {
-    const { loading, visits } = this.props;
-    if (loading) {
+    const data = background.data;
+
+    if (data.isLoading) {
       return (
         <div className="loading">Loading...</div>
       )
@@ -12,7 +26,7 @@ class RepoList extends Component {
 
     return (
       <ol>{
-        visits.map((v, i) => {
+        data.visits.map((v, i) => {
           return (
             <li key={i}>
               <a title={v.url} href={v.url} target="_blank">{v.title}</a>
@@ -27,16 +41,6 @@ class RepoList extends Component {
 
 document.addEventListener('DOMContentLoaded', () => {
   ReactDOM.render(
-    (<RepoList loading={true} />),
-    document.getElementById('content'))
-})
-
-var bg = chrome.extension.getBackgroundPage();
-console.log(bg);
-
-chrome.runtime.getBackgroundPage((backgroundPage) => {
-  console.log(backgroundPage)
-  ReactDOM.render(
-    (<RepoList loading={false} visits={backgroundPage.data.visits} />),
+    (<Popup />),
     document.getElementById('content'))
 })

@@ -1,11 +1,27 @@
-class A {
+
+var historyLoadedEvent = new Event('onHistoryLoaded')
+
+class HistoryLoader {
   constructor() {
-    this.loading = true
     this.visits = [ ]
     this.orgs = { }
+    this.isLoaded = false
+    this.loadData()
   }
 
-  convertVisit(v) {
+  getSearchCriteria() {
+    const now = new Date().getTime()
+    const rangeDays = 7
+    const millisPerDay = 24 * 60 * 60 * 1000
+    return {
+      text: 'https://github.com',
+      maxResults: 10000,
+      startTime: now - (rangeDays * millisPerDay),
+      endTime: now
+    }
+  }
+
+  buildVisit(v) {
     return {
       title: v.title,
       url: v.url,
@@ -14,23 +30,15 @@ class A {
   }
 
   loadData() {
-    const now = new Date().getTime()
-    const rangeDays = 7
-    const millisPerDay = 24 * 60 * 60 * 1000
-
-    chrome.history.search({
-        text: 'https://github.com',
-        maxResults: 10000,
-        startTime: now - (rangeDays * millisPerDay),
-        endTime: now
-      }, (v) => {
-          v.map(this.convertVisit)
-           .filter(v => v.title && v.url && v.parts[2] === 'github.com')
-           .forEach(v => { this.visits.push(v) })
-          this.loading = false
-        }
-    )
+    chrome.history.search(this.getSearchCriteria(), (v) => {
+      v.map(this.buildVisit)
+       .filter(v => v.title && v.url && v.parts[2] === 'github.com')
+       .forEach(v => { this.visits.push(v) })
+      console.log('dispatching ' + historyLoadedEvent)
+      this.isLoaded = true
+      window.dispatchEvent(historyLoadedEvent)
+    })
   }
 }
 
-data = new A()
+data = new HistoryLoader()
