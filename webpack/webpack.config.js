@@ -1,10 +1,10 @@
 const path = require('path');
 
 module.exports = {
-  entry: path.resolve('Extensions/Chrome/js/popup.js'),
+  entry: path.resolve('GitHub-Chrome-Extension/js/popup.js'),
   devtool: 'source-map',
   output: {
-    path: path.resolve('Extensions/Chrome/dist'),
+    path: path.resolve('GitHub-Chrome-Extension/dist'),
     filename: 'bundle.js'
   },
   module: {

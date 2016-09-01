@@ -20,8 +20,9 @@ class Popup extends Component {
   }
 
   render() {
+    console.log(background)
     const data = background.data
-    if (data === undefined || data == null || data.isLoading)
+    if (data === undefined || data == null || !data.isLoaded)
       return renderLoading();
 
     return this.renderOrgList(data.orgs)

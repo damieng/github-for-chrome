@@ -1,7 +1,7 @@
 {
   "name": "github-for-chrome",
   "version": "0.0.1",
-  "description": "Quickly navigate between your recently visited, starred and active GitHub repositories.",
+  "description": "Quickly navigate between your GitHub repositories.",
   "scripts": {
     "build": "webpack --config webpack/webpack.config.js --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
