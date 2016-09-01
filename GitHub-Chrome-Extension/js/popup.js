@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 import HistoryLoader from './history-loader'
 
-let background = chrome.extension.getBackgroundPage();
+let background = chrome.extension.getBackgroundPage()
 background.data = background.data || new HistoryLoader()
 
 class Popup extends Component {
@@ -21,8 +21,8 @@ class Popup extends Component {
 
   render() {
     const data = background.data
-    if (data === undefined || data == null || !data.isLoaded) {
-      console.log('data not ready')
+
+    if (data.isLoaded !== true) {
       return this.renderLoading();
     }
 
@@ -50,22 +50,21 @@ class Popup extends Component {
     var repoKeys = this.getSortedKeys(org.repos)
     if (repoKeys.length === 1)
       return (<a className={'single'} href={this.makeLink(org, repoKeys[0])} target="_blank">{repoKeys[0]}</a>)
-    else {
-      return this.renderRepoList(org, repoKeys)
-    }
+
+    return this.renderRepoList(org, repoKeys)
   }
 
   renderRepoList(org, repoKeys) {
-    return
-      (<ol className={'repos'}>
+    return (
+      <ol className={'repos'}>
         {repoKeys.map((repo) =>
           <li key={repo}>{this.renderRepo(org, repo)}</li>
         )}
-      </ol>)
+      </ol>
+    )
   }
 
   renderRepo(org, repo) {
-    const sectionKeys = Object.keys(repo)
     return (<a href={this.makeLink(org, repo)} target="_blank">{repo}</a>)
   }
 

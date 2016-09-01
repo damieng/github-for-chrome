@@ -101,8 +101,8 @@
 	    key: 'render',
 	    value: function render() {
 	      var data = background.data;
-	      if (data === undefined || data == null || !data.isLoaded) {
-	        console.log('data not ready');
+	
+	      if (data.isLoaded !== true) {
 	        return this.renderLoading();
 	      }
 	
@@ -147,17 +147,16 @@
 	        'a',
 	        { className: 'single', href: this.makeLink(org, repoKeys[0]), target: '_blank' },
 	        repoKeys[0]
-	      );else {
-	        return this.renderRepoList(org, repoKeys);
-	      }
+	      );
+	
+	      return this.renderRepoList(org, repoKeys);
 	    }
 	  }, {
 	    key: 'renderRepoList',
 	    value: function renderRepoList(org, repoKeys) {
 	      var _this4 = this;
 	
-	      return;
-	      _react2.default.createElement(
+	      return _react2.default.createElement(
 	        'ol',
 	        { className: 'repos' },
 	        repoKeys.map(function (repo) {
@@ -172,7 +171,6 @@
 	  }, {
 	    key: 'renderRepo',
 	    value: function renderRepo(org, repo) {
-	      var sectionKeys = Object.keys(repo);
 	      return _react2.default.createElement(
 	        'a',
 	        { href: this.makeLink(org, repo), target: '_blank' },
@@ -21594,6 +21592,7 @@
 	  function HistoryLoader() {
 	    _classCallCheck(this, HistoryLoader);
 	
+	    this.background = chrome.extension.getBackgroundPage();
 	    this.visits = [];
 	    this.orgs = {};
 	    this.isLoaded = false;
@@ -21673,14 +21672,15 @@
 	      var _this = this;
 	
 	      chrome.history.search(this.getSearchCriteria(), function (v) {
+	        console.log('loadData result triggered');
 	        v.map(function (v) {
 	          return _this.buildVisit(v);
 	        }).forEach(function (v) {
 	          if (v !== null) _this.addVisit(v);
 	        });
-	        _this.isLoaded = true;
 	        historyLoadedEvent.data = _this;
-	        window.dispatchEvent(historyLoadedEvent);
+	        _this.isLoaded = true;
+	        _this.background.dispatchEvent(historyLoadedEvent);
 	      });
 	    }
 	  }]);

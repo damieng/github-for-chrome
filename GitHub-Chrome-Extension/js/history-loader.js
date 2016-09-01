@@ -3,6 +3,7 @@ var historyLoadedEvent = new Event('onHistoryLoaded')
 
 export default class HistoryLoader {
   constructor() {
+    this.background = chrome.extension.getBackgroundPage()
     this.visits = [ ]
     this.orgs = { }
     this.isLoaded = false
@@ -75,10 +76,11 @@ export default class HistoryLoader {
 
   loadData() {
     chrome.history.search(this.getSearchCriteria(), (v) => {
+      console.log('loadData result triggered')
       v.map(v => this.buildVisit(v)).forEach(v => { if (v !== null) this.addVisit(v) })
-      this.isLoaded = true
       historyLoadedEvent.data = this
-      window.dispatchEvent(historyLoadedEvent)
+      this.isLoaded = true
+      this.background.dispatchEvent(historyLoadedEvent)
     })
   }
 }
