@@ -1,14 +1,19 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
+import HistoryLoader from './history-loader'
 
-const background = chrome.extension.getBackgroundPage();
+let background = chrome.extension.getBackgroundPage();
+background.data = background.data || new HistoryLoader()
 
 class Popup extends Component {
   componentWillMount() {
-    this.backgroundSubscription = background.addEventListener('onHistoryLoaded', (e) => this.forceUpdate())
+    this.backgroundSubscription = background.addEventListener('onHistoryLoaded', (e) => {
+      this.forceUpdate()
+    })
   }
 
   componentWillUnmount() {
+    console.log('will unmount')
     if (this.backgroundSubscription != null) {
       this.background.removeEventListener('onHistoryLoaded', backgroundSubscription)
       this.backgroundSubscription = null
@@ -16,9 +21,8 @@ class Popup extends Component {
   }
 
   render() {
-    const data = background.data;
-
-    if (data.isLoading) {
+    const data = background.data
+    if (data === undefined || data == null || data.isLoading) {
       return (
         <div className="loading">Loading...</div>
       )
