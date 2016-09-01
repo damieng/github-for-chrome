@@ -51,14 +51,14 @@ export default class HistoryLoader {
     if (v.org in this.orgs) {
       org = this.orgs[v.org]
     } else {
-      org = { }
+      org = { name: v.org, repos: [ ] }
       this.orgs[v.org] = org
     }
 
     if (v.repo in org) {
-      org[v.repo].push(v)
+      org.repos[v.repo].push(v)
     } else {
-      org[v.repo] = [ v ]
+      org.repos[v.repo] = [ v ]
     }
 
     this.visits.push(v)

@@ -13,7 +13,6 @@ class Popup extends Component {
   }
 
   componentWillUnmount() {
-    console.log('will unmount')
     if (this.backgroundSubscription != null) {
       this.background.removeEventListener('onHistoryLoaded', backgroundSubscription)
       this.backgroundSubscription = null
@@ -22,30 +21,58 @@ class Popup extends Component {
 
   render() {
     const data = background.data
-    if (data === undefined || data == null || data.isLoading) {
-      return (
-        <div className="loading">Loading...</div>
-      )
-    }
+    if (data === undefined || data == null || data.isLoading)
+      return renderLoading();
 
+    return this.renderOrgList(data.orgs)
+  }
+
+  renderLoading() {
+    return (
+      <div className="loading">Loading...</div>
+    )
+  }
+
+  renderOrgList(orgs) {
     return (
       <ol className='orgs'>
       {
-        this.getOrgKeys(data.orgs).map((o) =>
+        this.getOrgKeys(orgs).map((o) =>
             <li key={o}>
-              <a href={`https://github.com/${o}`} target="_blank">{o}</a>
-              <ol className={'repos'}>{
-                this.getRepoKeys(data.orgs[o]).map((r) =>
-                  <li key={r}>
-                    <a href={`https://github.com/${o}/${r}`} target="_blank">{r}</a>
-                  </li>
-                )
-              }</ol>
+              <a href={`https://github.com/${o}`} target="_blank">{o}</a>{
+                this.renderSingleRepoOrList(orgs[o])
+            }
             </li>
         )
       }
       </ol>
     )
+  }
+
+  renderSingleRepoOrList(org) {
+    var repoKeys = this.getRepoKeys(org)
+    if (repoKeys.length === 1)
+      return (
+        <a className={'single'} href={this.makeLink(org, repoKeys[0])} target="_blank">{repoKeys[0]}</a>
+      )
+    else {
+      return this.renderRepoList(org)
+    }
+  }
+
+  makeLink(org, repo) {
+    const parts = [ org.name, repo ].join('/')
+    return `https://github.com/${parts}`
+  }
+
+  renderRepoList(org) {
+    return (<ol className={'repos'}>{
+      this.getRepoKeys(org).map((r) =>
+        <li key={r}>
+          <a href={this.makeLink(org, r)} target="_blank">{r}</a>
+        </li>
+      )
+    }</ol>)
   }
 
   setSelected(e) {
@@ -59,7 +86,7 @@ class Popup extends Component {
   }
 
   getRepoKeys(org) {
-    const repoKeys = Object.keys(org)
+    const repoKeys = Object.keys(org.repos)
     repoKeys.sort((a, b)  => a.toLowerCase().localeCompare(b.toLowerCase()))
     return repoKeys
   }
