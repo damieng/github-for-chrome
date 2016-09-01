@@ -2,7 +2,7 @@ body {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow-x: hidden;
-  width: 100%;
+  width: 20em;
   margin: 0;
   padding: 0;
 }
@@ -13,20 +13,23 @@ ol {
   list-style-type: none;
   font-size: 15px;
   line-height: 24px;
-  position: relative;
 }
 
-li {
+ol.orgs > li {
+  border-top: 1px solid #ddd;
   padding: 0.5em;
 }
 
-li:hover > ol.repos {
+ol.orgs > li:hover > ol.repos {
   display: block;
 }
 
 ol.repos {
   display: none;
-  background-color: #eee;
+}
+
+ol.repos li {
+  padding-left: 1em;
 }
 
 a {
