@@ -24,7 +24,7 @@ export default class HistoryLoader {
   buildVisit(v) {
     const parts = v.url.split('/')
     if (parts[2] !== 'github.com' || v.title === "" || parts.length < 5) return null
-    if (parts[3] === 'orgs') return null
+    if (parts[3] === 'orgs' || parts[3] === 'settings') return null
 
     return {
       title: this.cleanTitle(v.title, parts[5]),
