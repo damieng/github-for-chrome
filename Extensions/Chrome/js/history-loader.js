@@ -69,7 +69,6 @@ export default class HistoryLoader {
       v.map(v => this.buildVisit(v)).forEach(v => { if (v !== null) this.addVisit(v) })
       this.isLoaded = true
       historyLoadedEvent.data = this
-      console.log(`loaded ${this.visits.length} visits, dispatching event`)
       window.dispatchEvent(historyLoadedEvent)
     })
   }

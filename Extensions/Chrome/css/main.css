@@ -4,7 +4,7 @@ body {
   overflow-x: hidden;
   width: 100%;
   margin: 0;
-  padding: 0.5em;
+  padding: 0;
 }
 
 ol {
@@ -13,4 +13,22 @@ ol {
   list-style-type: none;
   font-size: 15px;
   line-height: 24px;
+  position: relative;
+}
+
+li {
+  padding: 0.5em;
+}
+
+li:hover > ol.repos {
+  display: block;
+}
+
+ol.repos {
+  display: none;
+  background-color: #eee;
+}
+
+a {
+  text-decoration: none;
 }

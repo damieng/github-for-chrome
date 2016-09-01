@@ -29,17 +29,39 @@ class Popup extends Component {
     }
 
     return (
-      <ol>{
-        data.visits.map((v, i) => {
-          return (
-            <li key={i}>
-              <a title={v.url} href={v.url} target="_blank">{v.title}</a>
+      <ol className='orgs'>
+      {
+        this.getOrgKeys(data.orgs).map((o) =>
+            <li key={o}>
+              <a href={`https://github.com/${o}`} target="_blank">{o}</a>
+              <ol className={'repos'}>{
+                this.getRepoKeys(data.orgs[o]).map((r) =>
+                  <li key={r}>
+                    <a href={`https://github.com/${o}/${r}`} target="_blank">{r}</a>
+                  </li>
+                )
+              }</ol>
             </li>
-            )
-          })
-        }
+        )
+      }
       </ol>
     )
+  }
+
+  setSelected(e) {
+    console.log(e)
+  }
+
+  getOrgKeys(orgs) {
+    const orgsKeys = Object.keys(orgs)
+    orgsKeys.sort((a, b)  => a.toLowerCase().localeCompare(b.toLowerCase()))
+    return orgsKeys
+  }
+
+  getRepoKeys(org) {
+    const repoKeys = Object.keys(org)
+    repoKeys.sort((a, b)  => a.toLowerCase().localeCompare(b.toLowerCase()))
+    return repoKeys
   }
 }
 
