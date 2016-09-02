@@ -21756,13 +21756,13 @@
 	        case 'commit':
 	          v.className = 'git-commit';
 	          if (parts.length > 1) {
-	            if (parts[1].includes(' @') || parts[1].trim().startsWith(repoPath + '@')) {
-	              v.title = 'Commit ' + parts[1].split('@')[1] + ' ' + parts[0];
-	              return;
-	            }
 	            if (parts[0].includes(' at ')) {
 	              var subparts = parts[0].split(' at ');
-	              v.title = subparts[0] + ' @' + subparts[1].split(' at ')[1];
+	              v.title = subparts[0] + ' @' + subparts[1];
+	              return;
+	            }
+	            if (parts[1].includes(' @') || parts[1].trim().startsWith(repoPath + '@')) {
+	              v.title = 'Commit ' + parts[1].split('@')[1] + ' ' + parts[0];
 	              return;
 	            }
 	          }
@@ -21779,7 +21779,7 @@
 	            parts[0] = 'Branch ' + parts[0].slice(repoPath.length + 4);
 	          }
 	
-	          v.title = parts[0].replace(atFullHash, ' @$2').replace(' at master', '');
+	          v.title = parts[0].replace(' at master', ' @master').replace(atFullHash, ' @$2');
 	          return;
 	      }
 	
