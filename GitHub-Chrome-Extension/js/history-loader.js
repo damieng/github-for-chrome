@@ -4,7 +4,6 @@ var historyLoadedEvent = new Event('onHistoryLoaded')
 export default class HistoryLoader {
   constructor() {
     this.background = chrome.extension.getBackgroundPage()
-    this.visits = [ ]
     this.orgs = { }
     this.isLoaded = false
     this.loadData()
@@ -52,31 +51,19 @@ export default class HistoryLoader {
     if (v.org in this.orgs) {
       org = this.orgs[v.org]
     } else {
-      org = { name: v.org, repos: [ ] }
+      org = { orgName: v.org, repos: { } }
       this.orgs[v.org] = org
     }
 
-    let repo = null
-    if (v.repo in org) {
-      repo = org.repos[v.repo]
+    if (v.repo in org.repos) {
+      org.repos[v.repo].visits.push(v)
     } else {
-      repo = org.repos[v.repo] = { }
+      org.repos[v.repo] = { orgName: v.org, repoName: v.repo, visits: [ v ] }
     }
-
-    let section = null
-    if (v.section in repo) {
-      repo[v.section].push(v)
-    }
-    else {
-      repo[v.section] = [ v ]
-    }
-
-    this.visits.push(v)
   }
 
   loadData() {
     chrome.history.search(this.getSearchCriteria(), (v) => {
-      console.log('loadData result triggered')
       v.map(v => this.buildVisit(v)).forEach(v => { if (v !== null) this.addVisit(v) })
       historyLoadedEvent.data = this
       this.isLoaded = true

@@ -86,7 +86,7 @@
 	      var _this2 = this;
 	
 	      this.backgroundSubscription = background.addEventListener('onHistoryLoaded', function (e) {
-	        _this2.forceUpdate();
+	        return _this2.forceUpdate();
 	      });
 	    }
 	  }, {
@@ -100,22 +100,13 @@
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      var data = background.data;
-	
-	      if (data.isLoaded !== true) {
-	        return this.renderLoading();
-	      }
-	
-	      return this.renderOrgList(data.orgs);
-	    }
-	  }, {
-	    key: 'renderLoading',
-	    value: function renderLoading() {
-	      return _react2.default.createElement(
+	      if (background.data.isLoaded !== true) return _react2.default.createElement(
 	        'div',
 	        { className: 'loading' },
 	        'Loading...'
 	      );
+	
+	      return this.renderOrgList(background.data.orgs);
 	    }
 	  }, {
 	    key: 'renderOrgList',
@@ -125,63 +116,73 @@
 	      return _react2.default.createElement(
 	        'ol',
 	        { className: 'orgs' },
-	        this.getSortedKeys(orgs).map(function (orgKey) {
-	          return _react2.default.createElement(
-	            'li',
-	            { key: orgKey },
-	            _react2.default.createElement(
-	              'a',
-	              { href: 'https://github.com/' + orgKey, target: '_blank' },
-	              orgKey
-	            ),
-	            _this3.renderSingleRepoOrList(orgs[orgKey])
-	          );
+	        this.getSortedKeys(orgs).map(function (o) {
+	          return _this3.renderOrg(orgs[o]);
 	        })
 	      );
 	    }
 	  }, {
-	    key: 'renderSingleRepoOrList',
-	    value: function renderSingleRepoOrList(org) {
-	      var repoKeys = this.getSortedKeys(org.repos);
-	      if (repoKeys.length === 1) return _react2.default.createElement(
-	        'a',
-	        { className: 'single', href: this.makeLink(org, repoKeys[0]), target: '_blank' },
-	        repoKeys[0]
+	    key: 'renderOrg',
+	    value: function renderOrg(org) {
+	      return _react2.default.createElement(
+	        'li',
+	        { key: org.orgName },
+	        _react2.default.createElement(
+	          'a',
+	          { href: 'https://github.com/' + org.orgName, target: '_blank' },
+	          org.orgName
+	        ),
+	        this.renderSingleRepoOrList(org.repos)
 	      );
+	    }
+	  }, {
+	    key: 'renderSingleRepoOrList',
+	    value: function renderSingleRepoOrList(repos) {
+	      var repoKeys = this.getSortedKeys(repos);
+	      if (repoKeys.length === 1) return this.renderSingleRepo(repos[repoKeys[0]]);
 	
-	      return this.renderRepoList(org, repoKeys);
+	      return this.renderRepoList(repos, repoKeys);
+	    }
+	  }, {
+	    key: 'renderSingleRepo',
+	    value: function renderSingleRepo(repo) {
+	      return _react2.default.createElement(
+	        'span',
+	        null,
+	        ' / ',
+	        _react2.default.createElement(
+	          'a',
+	          { href: 'https://github.com/' + repo.orgName + '/' + repo.repoName, target: '_blank' },
+	          repo.repoName
+	        )
+	      );
 	    }
 	  }, {
 	    key: 'renderRepoList',
-	    value: function renderRepoList(org, repoKeys) {
+	    value: function renderRepoList(repos, repoKeys) {
 	      var _this4 = this;
 	
 	      return _react2.default.createElement(
 	        'ol',
 	        { className: 'repos' },
-	        repoKeys.map(function (repo) {
-	          return _react2.default.createElement(
-	            'li',
-	            { key: repo },
-	            _this4.renderRepo(org, repo)
-	          );
+	        repoKeys.map(function (r) {
+	          return _this4.renderRepo(repos[r]);
 	        })
 	      );
 	    }
 	  }, {
 	    key: 'renderRepo',
-	    value: function renderRepo(org, repo) {
+	    value: function renderRepo(repo) {
 	      return _react2.default.createElement(
-	        'a',
-	        { href: this.makeLink(org, repo), target: '_blank' },
-	        repo
+	        'li',
+	        { key: repo.repoName },
+	        _react2.default.createElement(
+	          'a',
+	          { href: 'https://github.com/' + repo.orgName + '/' + repo.repoName, target: '_blank' },
+	          repo.repoName
+	        ),
+	        _react2.default.createElement('ol', { className: 'visits' })
 	      );
-	    }
-	  }, {
-	    key: 'makeLink',
-	    value: function makeLink(org, repo) {
-	      var parts = [org.name, repo].join('/');
-	      return 'https://github.com/' + parts;
 	    }
 	  }, {
 	    key: 'getSortedKeys',
@@ -21593,7 +21594,6 @@
 	    _classCallCheck(this, HistoryLoader);
 	
 	    this.background = chrome.extension.getBackgroundPage();
-	    this.visits = [];
 	    this.orgs = {};
 	    this.isLoaded = false;
 	    this.loadData();
@@ -21646,25 +21646,15 @@
 	      if (v.org in this.orgs) {
 	        org = this.orgs[v.org];
 	      } else {
-	        org = { name: v.org, repos: [] };
+	        org = { orgName: v.org, repos: {} };
 	        this.orgs[v.org] = org;
 	      }
 	
-	      var repo = null;
-	      if (v.repo in org) {
-	        repo = org.repos[v.repo];
+	      if (v.repo in org.repos) {
+	        org.repos[v.repo].visits.push(v);
 	      } else {
-	        repo = org.repos[v.repo] = {};
+	        org.repos[v.repo] = { orgName: v.org, repoName: v.repo, visits: [v] };
 	      }
-	
-	      var section = null;
-	      if (v.section in repo) {
-	        repo[v.section].push(v);
-	      } else {
-	        repo[v.section] = [v];
-	      }
-	
-	      this.visits.push(v);
 	    }
 	  }, {
 	    key: 'loadData',
@@ -21672,7 +21662,6 @@
 	      var _this = this;
 	
 	      chrome.history.search(this.getSearchCriteria(), function (v) {
-	        console.log('loadData result triggered');
 	        v.map(function (v) {
 	          return _this.buildVisit(v);
 	        }).forEach(function (v) {

@@ -7,9 +7,7 @@ background.data = background.data || new HistoryLoader()
 
 class Popup extends Component {
   componentWillMount() {
-    this.backgroundSubscription = background.addEventListener('onHistoryLoaded', (e) => {
-      this.forceUpdate()
-    })
+    this.backgroundSubscription = background.addEventListener('onHistoryLoaded', (e) => this.forceUpdate())
   }
 
   componentWillUnmount() {
@@ -20,57 +18,59 @@ class Popup extends Component {
   }
 
   render() {
-    const data = background.data
+    if (background.data.isLoaded !== true)
+      return (<div className="loading">Loading...</div>)
 
-    if (data.isLoaded !== true) {
-      return this.renderLoading();
-    }
-
-    return this.renderOrgList(data.orgs)
-  }
-
-  renderLoading() {
-    return (<div className="loading">Loading...</div>)
+    return this.renderOrgList(background.data.orgs)
   }
 
   renderOrgList(orgs) {
     return (
       <ol className='orgs'>
-        {this.getSortedKeys(orgs).map((orgKey) =>
-            <li key={orgKey}>
-              <a href={`https://github.com/${orgKey}`} target="_blank">{orgKey}</a>
-                {this.renderSingleRepoOrList(orgs[orgKey])}
-            </li>
-        )}
+        {this.getSortedKeys(orgs).map((o) => this.renderOrg(orgs[o]))}
       </ol>
     )
   }
 
-  renderSingleRepoOrList(org) {
-    var repoKeys = this.getSortedKeys(org.repos)
-    if (repoKeys.length === 1)
-      return (<a className={'single'} href={this.makeLink(org, repoKeys[0])} target="_blank">{repoKeys[0]}</a>)
-
-    return this.renderRepoList(org, repoKeys)
+  renderOrg(org) {
+    return (
+      <li key={org.orgName}>
+        <a href={`https://github.com/${org.orgName}`} target="_blank">{org.orgName}</a>
+        {this.renderSingleRepoOrList(org.repos)}
+      </li>
+    )
   }
 
-  renderRepoList(org, repoKeys) {
+  renderSingleRepoOrList(repos) {
+    const repoKeys = this.getSortedKeys(repos)
+    if (repoKeys.length === 1)
+      return this.renderSingleRepo(repos[repoKeys[0]])
+
+    return this.renderRepoList(repos, repoKeys)
+  }
+
+  renderSingleRepo(repo) {
+    return (
+      <span> / <a href={`https://github.com/${repo.orgName}/${repo.repoName}`} target="_blank">{repo.repoName}</a></span>
+    )
+  }
+
+  renderRepoList(repos, repoKeys) {
     return (
       <ol className={'repos'}>
-        {repoKeys.map((repo) =>
-          <li key={repo}>{this.renderRepo(org, repo)}</li>
-        )}
+        {repoKeys.map((r) => this.renderRepo(repos[r]))}
       </ol>
     )
   }
 
-  renderRepo(org, repo) {
-    return (<a href={this.makeLink(org, repo)} target="_blank">{repo}</a>)
-  }
-
-  makeLink(org, repo) {
-    const parts = [ org.name, repo ].join('/')
-    return `https://github.com/${parts}`
+  renderRepo(repo) {
+    return (
+      <li key={repo.repoName}>
+        <a href={`https://github.com/${repo.orgName}/${repo.repoName}`} target="_blank">{repo.repoName}</a>
+        <ol className={'visits'}>
+        </ol>
+      </li>
+    )
   }
 
   getSortedKeys(obj) {

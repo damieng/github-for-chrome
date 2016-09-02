@@ -1,19 +1,24 @@
 body {
   background-color: #fafafa;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow-x: hidden;
-  width: 100%;
+  font-size: 16px;
+  line-height: 24px;
   margin: 0;
+  min-width: 15em;
+  overflow-x: hidden;
   padding: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.loading {
+  text-align: center;
 }
 
 ol {
+  list-style-type: none;
   margin: 0;
   padding: 0;
-  list-style-type: none;
-  font-size: 16px;
-  line-height: 24px;
 }
 
 ol.orgs > li {
@@ -27,11 +32,6 @@ ol.orgs > li > a:first-child {
 
 ol.orgs > li:hover > ol.repos {
   display: block;
-}
-
-ol.orgs > li > a.single::before {
-  color: #666;
-  content: " / ";
 }
 
 ol.repos {
@@ -48,5 +48,5 @@ a {
 }
 
 a:hover {
-  text-decoration: #f66;
+  text-decoration: underline;
 }
