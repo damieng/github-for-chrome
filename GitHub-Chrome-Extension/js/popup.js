@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import HistoryLoader from './history-loader'
 
 let background = chrome.extension.getBackgroundPage()
-background.data = /* background.data */ new HistoryLoader()
+background.data = background.data || new HistoryLoader()
 
 //  Polyfills
 const reduce = Function.bind.call(Function.call, Array.prototype.reduce);
@@ -19,7 +19,10 @@ if (!Object.values) {
 
 class Popup extends Component {
   componentWillMount() {
+		console.log('mounting ' + new Date())
     this.backgroundSubscription = background.addEventListener('onHistoryLoaded', (e) => this.forceUpdate())
+
+		this.refreshTimer = setTimeout(() => data.loadData(), 5000)
   }
 
   componentWillUnmount() {
@@ -27,10 +30,11 @@ class Popup extends Component {
       this.background.removeEventListener('onHistoryLoaded', backgroundSubscription)
       this.backgroundSubscription = null
     }
+		clearTimer(this.refreshTimer)
   }
 
   render() {
-    if (background.data.isLoaded !== true)
+    if (background.data.loading === true)
       return (<div className="loading">Loading...</div>)
 
     return this.renderOrgList(background.data.orgs)

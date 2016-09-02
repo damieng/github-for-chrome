@@ -69,7 +69,7 @@
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
 	var background = chrome.extension.getBackgroundPage();
-	background.data = /* background.data */new _historyLoader2.default();
+	background.data = background.data || new _historyLoader2.default();
 	
 	//  Polyfills
 	var reduce = Function.bind.call(Function.call, Array.prototype.reduce);
@@ -99,9 +99,14 @@
 	    value: function componentWillMount() {
 	      var _this2 = this;
 	
+	      console.log('mounting ' + new Date());
 	      this.backgroundSubscription = background.addEventListener('onHistoryLoaded', function (e) {
 	        return _this2.forceUpdate();
 	      });
+	
+	      this.refreshTimer = setTimeout(function () {
+	        return data.loadData();
+	      }, 5000);
 	    }
 	  }, {
 	    key: 'componentWillUnmount',
@@ -110,11 +115,12 @@
 	        this.background.removeEventListener('onHistoryLoaded', backgroundSubscription);
 	        this.backgroundSubscription = null;
 	      }
+	      clearTimer(this.refreshTimer);
 	    }
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      if (background.data.isLoaded !== true) return _react2.default.createElement(
+	      if (background.data.loading === true) return _react2.default.createElement(
 	        'div',
 	        { className: 'loading' },
 	        'Loading...'
@@ -21643,7 +21649,7 @@
 	
 	var atFullHash = /( at )([a-f0-9]{10})([a-f0-9]{30})/;
 	
-	var ignoreTops = ['orgs', 'settings', 'login'];
+	var ignoreTops = ['orgs', 'settings', 'login', 'blog'];
 	
 	var HistoryLoader = function () {
 	  function HistoryLoader() {
@@ -21651,16 +21657,15 @@
 	
 	    this.background = chrome.extension.getBackgroundPage();
 	    this.orgs = {};
-	    this.isLoaded = false;
+	    this.loading = true;
 	    this.loadData();
-	    console.log(this.orgs);
 	  }
 	
 	  _createClass(HistoryLoader, [{
 	    key: 'getSearchCriteria',
 	    value: function getSearchCriteria() {
 	      var now = new Date().getTime();
-	      var rangeDays = 10;
+	      var rangeDays = 8;
 	      var millisPerDay = 24 * 60 * 60 * 1000;
 	      return {
 	        text: 'https://github.com',
@@ -21678,13 +21683,7 @@
 	      var parts = h.url.split('?')[0].split('#')[0].split('/');
 	      if (parts.length < 5 || parts[4] === "" || ignoreTops.includes(parts[3])) return null;
 	
-	      switch (parts[3]) {
-	        case 'blog':
-	          return null;
-	      }
-	
 	      switch (parts[5]) {
-	        case 'blob':
 	        case 'blame':
 	        case 'search':
 	        case 'pulls':
@@ -21740,6 +21739,13 @@
 	          break;
 	        case 'issues':
 	          v.className = 'issue-opened';
+	          // URL and title fail to match often on /issues
+	          if (v.remaining === '' && v.title.includes('Issue #')) {
+	            v.title = 'Issues';
+	            v.originalTitle = ['Issues', repoPath].join(' : ');
+	            return;
+	          }
+	
 	          if (v.remaining !== '' && v.remaining != 'new') {
 	            v.title = 'Issue ' + v.remaining;
 	            if (parts.length > 2) v.title += ' ' + parts[0];
@@ -21767,8 +21773,13 @@
 	            }
 	          }
 	          break;
-	        case 'find':
 	        case 'tree':
+	          var filePathParts = v.remaining.split('/');
+	          v.title = filePathParts.slice(1).join('/') + ' at ' + filePathParts[0];
+	        case 'blob':
+	        case 'find':
+	          if (parts[0].startsWith(v.repo + '/')) parts[0] = parts[0].slice(v.repo.length + 1);
+	
 	          v.className = this.getIconForFile(v.remaining);
 	
 	          if (parts[0].startsWith('History ')) {
@@ -21779,13 +21790,13 @@
 	            parts[0] = 'Branch ' + parts[0].slice(repoPath.length + 4);
 	          }
 	
-	          v.title = parts[0].replace(' at master', ' @master').replace(atFullHash, ' @$2');
+	          v.title = parts[0].replace(atFullHash, ' at $2');
 	          return;
 	      }
 	
 	      v.title = parts.filter(function (t) {
-	        return t != repoPath;
-	      }).join(' * ');
+	        return t != repoPath && !t.startsWith(repoPath + '@');
+	      }).join(' : ');
 	    }
 	  }, {
 	    key: 'getIconForFile',
@@ -21793,7 +21804,6 @@
 	      var parts = filename.split('/');
 	      var lastPart = parts[parts.length - 1];
 	      var fileParts = lastPart.split('.');
-	      console.log(fileParts);
 	      if (fileParts.length === 1) return 'file-directory';
 	
 	      switch (fileParts[fileParts.length - 1]) {
@@ -21847,13 +21857,15 @@
 	      var _this = this;
 	
 	      chrome.history.search(this.getSearchCriteria(), function (v) {
+	        _this.loading = true;
+	        _this.orgs = {};
 	        v.map(function (v) {
 	          return _this.buildVisit(v);
 	        }).forEach(function (v) {
 	          if (v !== null) _this.addVisit(v);
 	        });
 	        historyLoadedEvent.data = _this;
-	        _this.isLoaded = true;
+	        _this.loading = false;
 	        _this.background.dispatchEvent(historyLoadedEvent);
 	      });
 	    }

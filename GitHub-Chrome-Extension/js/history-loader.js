@@ -2,20 +2,19 @@ var historyLoadedEvent = new Event('onHistoryLoaded')
 
 var atFullHash = /( at )([a-f0-9]{10})([a-f0-9]{30})/
 
-const ignoreTops = [ 'orgs', 'settings', 'login' ]
+const ignoreTops = [ 'orgs', 'settings', 'login', 'blog' ]
 
 export default class HistoryLoader {
   constructor() {
     this.background = chrome.extension.getBackgroundPage()
     this.orgs = { }
-    this.isLoaded = false
+    this.loading = true
     this.loadData()
-    console.log(this.orgs)
   }
 
   getSearchCriteria() {
     const now = new Date().getTime()
-    const rangeDays = 10
+    const rangeDays = 8
     const millisPerDay = 24 * 60 * 60 * 1000
     return {
       text: 'https://github.com',
@@ -28,19 +27,12 @@ export default class HistoryLoader {
   buildVisit(h) {
     if (!h.url.startsWith('https://github.com/') || h.url.includes('?page=')) return null
     if (h.title === null || h.title === undefined ||
-       h.title === 'File Finder' || h.title.startsWith('Page not found ') ||
-       h.title.trim() == '') return null
+       h.title === 'File Finder' || h.title.startsWith('Page not found ') || h.title.trim() == '') return null
 
     const parts = h.url.split('?')[0].split('#')[0].split('/')
     if (parts.length < 5 || parts[4] === "" || ignoreTops.includes(parts[3])) return null
 
-    switch(parts[3]) {
-      case 'blog':
-        return null
-    }
-
     switch(parts[5]) {
-      case 'blob':
       case 'blame':
       case 'search':
       case 'pulls':
@@ -95,6 +87,13 @@ export default class HistoryLoader {
         break
       case 'issues':
         v.className= 'issue-opened'
+        // URL and title fail to match often on /issues
+        if (v.remaining === '' && v.title.includes('Issue #')) {
+          v.title = 'Issues'
+          v.originalTitle = ['Issues', repoPath].join(' : ')
+          return
+        }
+
         if (v.remaining !== '' && v.remaining != 'new') {
           v.title = 'Issue ' + v.remaining
           if (parts.length > 2)
@@ -123,8 +122,14 @@ export default class HistoryLoader {
           }
         }
         break
-      case 'find':
       case 'tree':
+        const filePathParts = v.remaining.split('/')
+        v.title = `${filePathParts.slice(1).join('/')} at ${filePathParts[0]}`
+      case 'blob':
+      case 'find':
+        if (parts[0].startsWith(v.repo + '/'))
+          parts[0] = parts[0].slice(v.repo.length + 1)
+
         v.className = this.getIconForFile(v.remaining)
 
         if (parts[0].startsWith('History ')) {
@@ -135,18 +140,17 @@ export default class HistoryLoader {
           parts[0] = 'Branch ' + parts[0].slice(repoPath.length + 4)
         }
 
-        v.title = parts[0].replace(' at master',' @master').replace(atFullHash, ' @$2')
+        v.title = parts[0].replace(atFullHash, ' at $2')
         return
     }
 
-    v.title = parts.filter((t) => t != repoPath).join(' * ')
+    v.title = parts.filter((t) => t != repoPath && !t.startsWith(repoPath + '@')).join(' : ')
   }
 
   getIconForFile(filename) {
     const parts = filename.split('/')
     const lastPart = parts[parts.length - 1]
     const fileParts = lastPart.split('.')
-    console.log(fileParts)
     if (fileParts.length === 1)
       return 'file-directory'
 
@@ -194,9 +198,11 @@ export default class HistoryLoader {
 
   loadData() {
     chrome.history.search(this.getSearchCriteria(), (v) => {
+      this.loading = true
+      this.orgs = { }
       v.map(v => this.buildVisit(v)).forEach(v => { if (v !== null) this.addVisit(v) })
       historyLoadedEvent.data = this
-      this.isLoaded = true
+      this.loading = false
       this.background.dispatchEvent(historyLoadedEvent)
     })
   }
