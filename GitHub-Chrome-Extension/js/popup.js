@@ -35,7 +35,7 @@ class Popup extends Component {
   renderOrg(org) {
     return (
       <li key={org.orgName}>
-        <a href={`https://github.com/${org.orgName}`} target="_blank">{org.orgName}</a>
+        {this.renderLink(org.orgName)}
         {this.renderSingleRepoOrList(org.repos)}
       </li>
     )
@@ -51,8 +51,15 @@ class Popup extends Component {
 
   renderSingleRepo(repo) {
     return (
-      <span> / <a href={`https://github.com/${repo.orgName}/${repo.repoName}`} target="_blank">{repo.repoName}</a></span>
+      <span> / {this.renderLink(repo.orgName, repo.repoName)}</span>
     )
+  }
+
+  renderLink(orgName, repoName)
+  {
+    const parts = [ orgName, repoName ].join('/')
+    const linkName = repoName === undefined ? orgName : repoName
+    return (<a href={`https://github.com/${parts}`} target="_blank">{linkName}</a>)
   }
 
   renderRepoList(repos, repoKeys) {
@@ -66,7 +73,7 @@ class Popup extends Component {
   renderRepo(repo) {
     return (
       <li key={repo.repoName}>
-        <a href={`https://github.com/${repo.orgName}/${repo.repoName}`} target="_blank">{repo.repoName}</a>
+        {this.renderLink(repo.orgName, repo.repoName)}
         <ol className={'visits'}>
         </ol>
       </li>

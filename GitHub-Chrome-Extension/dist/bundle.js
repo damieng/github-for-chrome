@@ -127,11 +127,7 @@
 	      return _react2.default.createElement(
 	        'li',
 	        { key: org.orgName },
-	        _react2.default.createElement(
-	          'a',
-	          { href: 'https://github.com/' + org.orgName, target: '_blank' },
-	          org.orgName
-	        ),
+	        this.renderLink(org.orgName),
 	        this.renderSingleRepoOrList(org.repos)
 	      );
 	    }
@@ -150,11 +146,18 @@
 	        'span',
 	        null,
 	        ' / ',
-	        _react2.default.createElement(
-	          'a',
-	          { href: 'https://github.com/' + repo.orgName + '/' + repo.repoName, target: '_blank' },
-	          repo.repoName
-	        )
+	        this.renderLink(repo.orgName, repo.repoName)
+	      );
+	    }
+	  }, {
+	    key: 'renderLink',
+	    value: function renderLink(orgName, repoName) {
+	      var parts = [orgName, repoName].join('/');
+	      var linkName = repoName === undefined ? orgName : repoName;
+	      return _react2.default.createElement(
+	        'a',
+	        { href: 'https://github.com/' + parts, target: '_blank' },
+	        linkName
 	      );
 	    }
 	  }, {
@@ -176,11 +179,7 @@
 	      return _react2.default.createElement(
 	        'li',
 	        { key: repo.repoName },
-	        _react2.default.createElement(
-	          'a',
-	          { href: 'https://github.com/' + repo.orgName + '/' + repo.repoName, target: '_blank' },
-	          repo.repoName
-	        ),
+	        this.renderLink(repo.orgName, repo.repoName),
 	        _react2.default.createElement('ol', { className: 'visits' })
 	      );
 	    }
@@ -21616,8 +21615,8 @@
 	    key: 'buildVisit',
 	    value: function buildVisit(v) {
 	      var parts = v.url.split('/');
-	      if (parts[2] !== 'github.com' || v.title === "" || parts.length < 5) return null;
-	      if (parts[3] === 'orgs' || parts[3] === 'settings') return null;
+	      if (parts[2] !== 'github.com' || v.title === '' || parts.length < 5) return null;
+	      if (parts[3] === 'orgs' || parts[3] === 'settings' || parts[3].includes('#')) return null;
 	
 	      return {
 	        title: this.cleanTitle(v.title, parts[5]),
