@@ -38,7 +38,7 @@ ol.repos {
   /* display: none;*/
 }
 
-ol.repos li {
+ol.repos li, ol.visits li {
   padding-left: 1em;
 }
 

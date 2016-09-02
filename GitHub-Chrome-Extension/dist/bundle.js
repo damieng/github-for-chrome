@@ -69,7 +69,21 @@
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
 	var background = chrome.extension.getBackgroundPage();
-	background.data = background.data || new _historyLoader2.default();
+	background.data = /* background.data */new _historyLoader2.default();
+	
+	//  Polyfills
+	var reduce = Function.bind.call(Function.call, Array.prototype.reduce);
+	var isEnumerable = Function.bind.call(Function.call, Object.prototype.propertyIsEnumerable);
+	var concat = Function.bind.call(Function.call, Array.prototype.concat);
+	var keys = Reflect.ownKeys;
+	
+	if (!Object.values) {
+	  Object.values = function values(O) {
+	    return reduce(keys(O), function (v, k) {
+	      return concat(v, typeof k === 'string' && isEnumerable(O, k) ? [O[k]] : []);
+	    }, []);
+	  };
+	}
 	
 	var Popup = function (_Component) {
 	  _inherits(Popup, _Component);
@@ -146,7 +160,8 @@
 	        'span',
 	        null,
 	        ' / ',
-	        this.renderLink(repo.orgName, repo.repoName)
+	        this.renderLink(repo.orgName, repo.repoName),
+	        this.renderRepoVisits(repo.visits)
 	      );
 	    }
 	  }, {
@@ -168,8 +183,8 @@
 	      return _react2.default.createElement(
 	        'ol',
 	        { className: 'repos' },
-	        repoKeys.map(function (r) {
-	          return _this4.renderRepo(repos[r]);
+	        repoKeys.map(function (rk) {
+	          return _this4.renderRepo(repos[rk]);
 	        })
 	      );
 	    }
@@ -180,17 +195,50 @@
 	        'li',
 	        { key: repo.repoName },
 	        this.renderLink(repo.orgName, repo.repoName),
-	        _react2.default.createElement('ol', { className: 'visits' })
+	        this.renderRepoVisits(repo.visits)
+	      );
+	    }
+	  }, {
+	    key: 'renderRepoVisits',
+	    value: function renderRepoVisits(visits) {
+	      var _this5 = this;
+	
+	      var sortedVisits = Object.values(visits);
+	      if (sortedVisits.length === 0) return;
+	      sortedVisits.sort(function (a, b) {
+	        return _this5.stringSort(a.title, b.title);
+	      });
+	
+	      return _react2.default.createElement(
+	        'ol',
+	        { className: 'visits' },
+	        sortedVisits.map(this.renderRepoVisit)
+	      );
+	    }
+	  }, {
+	    key: 'renderRepoVisit',
+	    value: function renderRepoVisit(visit) {
+	      return _react2.default.createElement(
+	        'li',
+	        { key: visit.url },
+	        _react2.default.createElement(
+	          'a',
+	          { href: visit.url, title: visit.originalTitle },
+	          visit.title
+	        )
 	      );
 	    }
 	  }, {
 	    key: 'getSortedKeys',
 	    value: function getSortedKeys(obj) {
 	      var keys = Object.keys(obj);
-	      keys.sort(function (a, b) {
-	        return a.toLowerCase().localeCompare(b.toLowerCase());
-	      });
+	      keys.sort(this.stringSort);
 	      return keys;
+	    }
+	  }, {
+	    key: 'stringSort',
+	    value: function stringSort(a, b) {
+	      return a.toLowerCase().localeCompare(b.toLowerCase());
 	    }
 	  }]);
 	
@@ -21588,6 +21636,10 @@
 	
 	var historyLoadedEvent = new Event('onHistoryLoaded');
 	
+	var atFullHash = /( at )([a-f0-9]{10})([a-f0-9]{30})/;
+	
+	var ignoreTops = ['orgs', 'settings', 'login'];
+	
 	var HistoryLoader = function () {
 	  function HistoryLoader() {
 	    _classCallCheck(this, HistoryLoader);
@@ -21596,13 +21648,14 @@
 	    this.orgs = {};
 	    this.isLoaded = false;
 	    this.loadData();
+	    console.log(this.orgs);
 	  }
 	
 	  _createClass(HistoryLoader, [{
 	    key: 'getSearchCriteria',
 	    value: function getSearchCriteria() {
 	      var now = new Date().getTime();
-	      var rangeDays = 7;
+	      var rangeDays = 10;
 	      var millisPerDay = 24 * 60 * 60 * 1000;
 	      return {
 	        text: 'https://github.com',
@@ -21613,30 +21666,76 @@
 	    }
 	  }, {
 	    key: 'buildVisit',
-	    value: function buildVisit(v) {
-	      var parts = v.url.split('/');
-	      if (parts[2] !== 'github.com' || v.title === '' || parts.length < 5) return null;
-	      if (parts[3] === 'orgs' || parts[3] === 'settings' || parts[3].includes('#')) return null;
+	    value: function buildVisit(h) {
+	      if (!h.url.startsWith('https://github.com/') || h.url.includes('?page=')) return null;
+	      if (h.title === null || h.title === undefined || h.title === 'File Finder' || h.title.startsWith('Page not found ') || h.title.trim() == '') return null;
 	
-	      return {
-	        title: this.cleanTitle(v.title, parts[5]),
-	        url: v.url,
+	      var parts = h.url.split('?')[0].split('#')[0].split('/');
+	      if (parts.length < 5 || ignoreTops.includes(parts[3])) return null;
+	
+	      switch (parts[5]) {
+	        case 'blob':
+	        case 'blame':
+	        case 'search':
+	        case 'issues':
+	        case 'pulls':
+	          return null;
+	      }
+	
+	      var visit = {
+	        title: h.title,
+	        url: h.url,
 	        org: parts[3],
 	        repo: parts[4],
-	        section: parts[5]
+	        section: parts[5],
+	        remaining: parts.slice(6).join('/'),
+	        originalTitle: h.title
 	      };
+	
+	      this.adjustTitle(visit);
+	
+	      return visit;
 	    }
 	  }, {
-	    key: 'cleanTitle',
-	    value: function cleanTitle(title, section) {
-	      switch (section) {
-	        case 'issues':
-	          var titleParts = title.split(' · ');
-	          if (titleParts.length < 3) return title;
-	          return titleParts[1].replace('Issue #', '') + ' ' + titleParts[2];
-	        default:
-	          return title;
+	    key: 'adjustTitle',
+	    value: function adjustTitle(v) {
+	      var parts = v.title.split(/[\t-\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF][\-\xB7][\t-\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]/);
+	      var repoPath = v.org + '/' + v.repo;
+	
+	      switch (v.section) {
+	        case 'pull':
+	          v.title = parts[1].replace('Pull Request #', 'PR #') + ' ' + parts[0];
+	          return;
+	        case 'commits':
+	          if (parts[0] == 'Commits') {
+	            v.title = 'Commits in ' + v.remaining;
+	            return;
+	          }
+	        case 'commit':
+	          if (parts.length > 1) {
+	            if (parts[1].includes(' @') || parts[1].trim().startsWith(repoPath + '@')) {
+	              v.title = 'Commit @' + parts[1].split('@')[1] + ' ' + parts[0];
+	              return;
+	            }
+	            if (parts[0].includes(' at ')) {
+	              var subparts = parts[0].split(' at ');
+	              v.title = subparts[0] + ' @' + subparts[1].split(' at ')[1];
+	              return;
+	            }
+	          }
+	        case 'find':
+	        case 'tree':
+	          if (parts[0].startsWith(repoPath + ' at ')) {
+	            parts[0] = 'Branch ' + parts[0].slice(repoPath.length + 4);
+	          }
+	
+	          v.title = parts[0].replace(atFullHash, ' @$2').replace(' at master', '');
+	          return;
 	      }
+	
+	      v.title = parts.filter(function (t) {
+	        return t != repoPath;
+	      }).join(' * ');
 	    }
 	  }, {
 	    key: 'addVisit',
@@ -21649,10 +21748,16 @@
 	        this.orgs[v.org] = org;
 	      }
 	
+	      var repo = null;
 	      if (v.repo in org.repos) {
-	        org.repos[v.repo].visits.push(v);
+	        repo = org.repos[v.repo];
 	      } else {
-	        org.repos[v.repo] = { orgName: v.org, repoName: v.repo, visits: [v] };
+	        repo = org.repos[v.repo] = { orgName: v.org, repoName: v.repo, visits: {} };
+	      }
+	
+	      if (v.section === undefined) return;
+	      if (!(v.url in repo.visits)) {
+	        repo.visits[v.url] = v;
 	      }
 	    }
 	  }, {

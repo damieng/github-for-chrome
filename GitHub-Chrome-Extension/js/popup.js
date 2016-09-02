@@ -3,7 +3,19 @@ import ReactDOM from 'react-dom'
 import HistoryLoader from './history-loader'
 
 let background = chrome.extension.getBackgroundPage()
-background.data = background.data || new HistoryLoader()
+background.data = /* background.data */ new HistoryLoader()
+
+//  Polyfills
+const reduce = Function.bind.call(Function.call, Array.prototype.reduce);
+const isEnumerable = Function.bind.call(Function.call, Object.prototype.propertyIsEnumerable);
+const concat = Function.bind.call(Function.call, Array.prototype.concat);
+const keys = Reflect.ownKeys;
+
+if (!Object.values) {
+	Object.values = function values(O) {
+		return reduce(keys(O), (v, k) => concat(v, typeof k === 'string' && isEnumerable(O, k) ? [O[k]] : []), [])
+	}
+}
 
 class Popup extends Component {
   componentWillMount() {
@@ -51,12 +63,13 @@ class Popup extends Component {
 
   renderSingleRepo(repo) {
     return (
-      <span> / {this.renderLink(repo.orgName, repo.repoName)}</span>
+      <span> / {this.renderLink(repo.orgName, repo.repoName)}
+        {this.renderRepoVisits(repo.visits)}
+      </span>
     )
   }
 
-  renderLink(orgName, repoName)
-  {
+  renderLink(orgName, repoName) {
     const parts = [ orgName, repoName ].join('/')
     const linkName = repoName === undefined ? orgName : repoName
     return (<a href={`https://github.com/${parts}`} target="_blank">{linkName}</a>)
@@ -65,7 +78,7 @@ class Popup extends Component {
   renderRepoList(repos, repoKeys) {
     return (
       <ol className={'repos'}>
-        {repoKeys.map((r) => this.renderRepo(repos[r]))}
+        {repoKeys.map((rk) => this.renderRepo(repos[rk]))}
       </ol>
     )
   }
@@ -74,16 +87,35 @@ class Popup extends Component {
     return (
       <li key={repo.repoName}>
         {this.renderLink(repo.orgName, repo.repoName)}
-        <ol className={'visits'}>
-        </ol>
+        {this.renderRepoVisits(repo.visits)}
       </li>
     )
   }
 
+  renderRepoVisits(visits) {
+    let sortedVisits = Object.values(visits)
+    if (sortedVisits.length === 0) return
+    sortedVisits.sort((a, b) => this.stringSort(a.title, b.title))
+
+    return (
+      <ol className={'visits'}>
+        {sortedVisits.map(this.renderRepoVisit)}
+      </ol>
+    )
+  }
+
+  renderRepoVisit(visit) {
+    return (<li key={visit.url}><a href={visit.url} title={visit.originalTitle}>{visit.title}</a></li>)
+  }
+
   getSortedKeys(obj) {
     const keys = Object.keys(obj)
-    keys.sort((a, b)  => a.toLowerCase().localeCompare(b.toLowerCase()))
+    keys.sort(this.stringSort)
     return keys
+  }
+
+  stringSort(a, b) {
+    return a.toLowerCase().localeCompare(b.toLowerCase())
   }
 }
 
