@@ -34,12 +34,12 @@ ol.orgs > li:hover > ol.repos {
   display: block;
 }
 
-ol.repos {
-  /* display: none;*/
+ol.repos> li > ol.visits {
+  padding-left: 1em !important ;
 }
 
-ol.repos li, ol.visits li {
-  padding-left: 1em;
+.octicon {
+  padding-right: 3px;
 }
 
 a {

@@ -160,6 +160,7 @@
 	        'span',
 	        null,
 	        ' / ',
+	        _react2.default.createElement('span', { className: "octicon octicon-repo" }),
 	        this.renderLink(repo.orgName, repo.repoName),
 	        this.renderRepoVisits(repo.visits)
 	      );
@@ -194,6 +195,7 @@
 	      return _react2.default.createElement(
 	        'li',
 	        { key: repo.repoName },
+	        _react2.default.createElement('span', { className: "octicon octicon-repo" }),
 	        this.renderLink(repo.orgName, repo.repoName),
 	        this.renderRepoVisits(repo.visits)
 	      );
@@ -217,14 +219,17 @@
 	    }
 	  }, {
 	    key: 'renderRepoVisit',
-	    value: function renderRepoVisit(visit) {
+	    value: function renderRepoVisit(v) {
+	      var icon = v.className === undefined ? '' : _react2.default.createElement('span', { className: 'octicon octicon-' + v.className });
+	
 	      return _react2.default.createElement(
 	        'li',
-	        { key: visit.url },
+	        { key: v.url },
+	        icon,
 	        _react2.default.createElement(
 	          'a',
-	          { href: visit.url, title: visit.originalTitle },
-	          visit.title
+	          { href: v.url, title: v.originalTitle, target: '_blank' },
+	          v.title
 	        )
 	      );
 	    }
@@ -21671,13 +21676,17 @@
 	      if (h.title === null || h.title === undefined || h.title === 'File Finder' || h.title.startsWith('Page not found ') || h.title.trim() == '') return null;
 	
 	      var parts = h.url.split('?')[0].split('#')[0].split('/');
-	      if (parts.length < 5 || ignoreTops.includes(parts[3])) return null;
+	      if (parts.length < 5 || parts[4] === "" || ignoreTops.includes(parts[3])) return null;
+	
+	      switch (parts[3]) {
+	        case 'blog':
+	          return null;
+	      }
 	
 	      switch (parts[5]) {
 	        case 'blob':
 	        case 'blame':
 	        case 'search':
-	        case 'issues':
 	        case 'pulls':
 	          return null;
 	      }
@@ -21702,19 +21711,53 @@
 	      var parts = v.title.split(/[\t-\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF][\-\xB7][\t-\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]/);
 	      var repoPath = v.org + '/' + v.repo;
 	
+	      v.className = 'arrow-small-right';
+	
 	      switch (v.section) {
 	        case 'pull':
-	          v.title = parts[1].replace('Pull Request #', 'PR #') + ' ' + parts[0];
+	          v.className = 'git-pull-request';
+	          v.title = parts[1].replace('Pull Request #', 'PR ') + ' ' + parts[0];
 	          return;
+	        case 'edit':
+	        case 'new':
+	          v.className = 'pencil';
+	          break;
+	        case 'graphs':
+	          v.className = 'graph';
+	          break;
+	        case 'settings':
+	          v.className = 'settings';
+	          break;
+	        case 'compare':
+	          v.className = 'diff';
+	          break;
+	        case 'releases':
+	        case 'release':
+	          v.className = 'package';
+	          break;
+	        case 'branches':
+	          v.className = 'git-branch';
+	          break;
+	        case 'issues':
+	          v.className = 'issue-opened';
+	          if (v.remaining !== '' && v.remaining != 'new') {
+	            v.title = 'Issue ' + v.remaining;
+	            if (parts.length > 2) v.title += ' ' + parts[0];
+	            return;
+	          }
+	          break;
 	        case 'commits':
-	          if (parts[0] == 'Commits') {
+	          v.className = 'git-branch';
+	          if (parts[0] == 'Commits' && v.remaining != '') {
 	            v.title = 'Commits in ' + v.remaining;
 	            return;
 	          }
+	          break;
 	        case 'commit':
+	          v.className = 'git-commit';
 	          if (parts.length > 1) {
 	            if (parts[1].includes(' @') || parts[1].trim().startsWith(repoPath + '@')) {
-	              v.title = 'Commit @' + parts[1].split('@')[1] + ' ' + parts[0];
+	              v.title = 'Commit ' + parts[1].split('@')[1] + ' ' + parts[0];
 	              return;
 	            }
 	            if (parts[0].includes(' at ')) {
@@ -21723,8 +21766,15 @@
 	              return;
 	            }
 	          }
+	          break;
 	        case 'find':
 	        case 'tree':
+	          v.className = this.getIconForFile(v.remaining);
+	
+	          if (parts[0].startsWith('History ')) {
+	            v.className = 'history';
+	          }
+	
 	          if (parts[0].startsWith(repoPath + ' at ')) {
 	            parts[0] = 'Branch ' + parts[0].slice(repoPath.length + 4);
 	          }
@@ -21736,6 +21786,36 @@
 	      v.title = parts.filter(function (t) {
 	        return t != repoPath;
 	      }).join(' * ');
+	    }
+	  }, {
+	    key: 'getIconForFile',
+	    value: function getIconForFile(filename) {
+	      var parts = filename.split('/');
+	      var lastPart = parts[parts.length - 1];
+	      var fileParts = lastPart.split('.');
+	      console.log(fileParts);
+	      if (fileParts.length === 1) return 'file-directory';
+	
+	      switch (fileParts[fileParts.length - 1]) {
+	        case 'md':
+	          return 'markdown';
+	        case 'txt':
+	          return 'file-text';
+	        case 'pdf':
+	          return 'file-pdf';
+	        case 'jpg':
+	        case 'jpeg':
+	        case 'png':
+	        case 'svg':
+	        case 'gif':
+	        case 'tiff':
+	        case 'tif':
+	          return 'file-media';
+	        case 'exe':
+	          return 'file-binary';
+	        default:
+	          return 'file-code';
+	      }
 	    }
 	  }, {
 	    key: 'addVisit',
@@ -21756,8 +21836,9 @@
 	      }
 	
 	      if (v.section === undefined) return;
-	      if (!(v.url in repo.visits)) {
-	        repo.visits[v.url] = v;
+	      var cleanUrl = v.url.split('#')[0].split('?')[0];
+	      if (!(cleanUrl in repo.visits)) {
+	        repo.visits[cleanUrl] = v;
 	      }
 	    }
 	  }, {

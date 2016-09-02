@@ -63,7 +63,8 @@ class Popup extends Component {
 
   renderSingleRepo(repo) {
     return (
-      <span> / {this.renderLink(repo.orgName, repo.repoName)}
+      <span> / <span className={"octicon octicon-repo"}></span>
+				{this.renderLink(repo.orgName, repo.repoName)}
         {this.renderRepoVisits(repo.visits)}
       </span>
     )
@@ -86,6 +87,7 @@ class Popup extends Component {
   renderRepo(repo) {
     return (
       <li key={repo.repoName}>
+        <span className={"octicon octicon-repo"}></span>
         {this.renderLink(repo.orgName, repo.repoName)}
         {this.renderRepoVisits(repo.visits)}
       </li>
@@ -104,8 +106,13 @@ class Popup extends Component {
     )
   }
 
-  renderRepoVisit(visit) {
-    return (<li key={visit.url}><a href={visit.url} title={visit.originalTitle}>{visit.title}</a></li>)
+  renderRepoVisit(v) {
+		const icon = v.className === undefined ? '' : <span className={'octicon octicon-' + v.className}></span>
+
+    return (<li key={v.url}>
+			{icon}
+			<a href={v.url} title={v.originalTitle} target="_blank">{v.title}</a>
+		</li>)
   }
 
   getSortedKeys(obj) {
