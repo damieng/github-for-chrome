@@ -14,7 +14,7 @@ export default class HistoryLoader {
     const rangeDays = 8
     const millisPerDay = 24 * 60 * 60 * 1000
     return {
-      text: 'https://github.com',
+      text: 'github',
       maxResults: 10000,
       startTime: now - (rangeDays * millisPerDay),
       endTime: now
@@ -22,7 +22,9 @@ export default class HistoryLoader {
   }
 
   buildVisit(h) {
-    if (!h.url.startsWith('https://github.com/') || h.url.includes('?page=')) return null
+    console.log(h.url);
+    const isGithubUrl = h.url.startsWith('https://github.com') || h.url.startsWith('https://github.secureserver.net');
+    if (!isGithubUrl || h.url.includes('?page=')) return null
     if (h.title === null || h.title === undefined ||
        h.title === 'File Finder' || h.title.startsWith('Page not found ') || h.title.trim() == '') return null
 
