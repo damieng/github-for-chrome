@@ -69,21 +69,7 @@
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
 	var background = chrome.extension.getBackgroundPage();
-	background.data = background.data || new _historyLoader2.default();
-	
-	//  Polyfills
-	var reduce = Function.bind.call(Function.call, Array.prototype.reduce);
-	var isEnumerable = Function.bind.call(Function.call, Object.prototype.propertyIsEnumerable);
-	var concat = Function.bind.call(Function.call, Array.prototype.concat);
-	var keys = Reflect.ownKeys;
-	
-	if (!Object.values) {
-	  Object.values = function values(O) {
-	    return reduce(keys(O), function (v, k) {
-	      return concat(v, typeof k === 'string' && isEnumerable(O, k) ? [O[k]] : []);
-	    }, []);
-	  };
-	}
+	background.historic = background.historic || new _historyLoader2.default();
 	
 	var Popup = function (_Component) {
 	  _inherits(Popup, _Component);
@@ -99,13 +85,11 @@
 	    value: function componentWillMount() {
 	      var _this2 = this;
 	
-	      console.log('mounting ' + new Date());
 	      this.backgroundSubscription = background.addEventListener('onHistoryLoaded', function (e) {
 	        return _this2.forceUpdate();
 	      });
-	
 	      this.refreshTimer = setTimeout(function () {
-	        return data.loadData();
+	        return background.historic.loadData();
 	      }, 5000);
 	    }
 	  }, {
@@ -120,13 +104,13 @@
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      if (background.data.loading === true) return _react2.default.createElement(
+	      if (background.historic.loading === true) return _react2.default.createElement(
 	        'div',
 	        { className: 'loading' },
 	        'Loading...'
 	      );
 	
-	      return this.renderOrgList(background.data.orgs);
+	      return this.renderOrgList(background.historic.orgs);
 	    }
 	  }, {
 	    key: 'renderOrgList',
@@ -211,7 +195,9 @@
 	    value: function renderRepoVisits(visits) {
 	      var _this5 = this;
 	
-	      var sortedVisits = Object.values(visits);
+	      var sortedVisits = Object.keys(visits).map(function (k) {
+	        return visits[k];
+	      });
 	      if (sortedVisits.length === 0) return;
 	      sortedVisits.sort(function (a, b) {
 	        return _this5.stringSort(a.title, b.title);
@@ -21715,8 +21701,10 @@
 	      switch (v.section) {
 	        case 'pull':
 	          v.className = 'git-pull-request';
-	          v.title = parts[1].replace('Pull Request #', 'PR ') + ' ' + parts[0];
-	          return;
+	          if (parts.length > 1) {
+	            v.title = parts[1].replace('Pull Request #', 'PR ') + ' ' + parts[0];
+	            return;
+	          }
 	        case 'edit':
 	        case 'new':
 	          v.className = 'pencil';

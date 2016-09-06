@@ -3,26 +3,12 @@ import ReactDOM from 'react-dom'
 import HistoryLoader from './history-loader'
 
 let background = chrome.extension.getBackgroundPage()
-background.data = background.data || new HistoryLoader()
-
-//  Polyfills
-const reduce = Function.bind.call(Function.call, Array.prototype.reduce);
-const isEnumerable = Function.bind.call(Function.call, Object.prototype.propertyIsEnumerable);
-const concat = Function.bind.call(Function.call, Array.prototype.concat);
-const keys = Reflect.ownKeys;
-
-if (!Object.values) {
-	Object.values = function values(O) {
-		return reduce(keys(O), (v, k) => concat(v, typeof k === 'string' && isEnumerable(O, k) ? [O[k]] : []), [])
-	}
-}
+background.historic = background.historic || new HistoryLoader()
 
 class Popup extends Component {
   componentWillMount() {
-		console.log('mounting ' + new Date())
     this.backgroundSubscription = background.addEventListener('onHistoryLoaded', (e) => this.forceUpdate())
-
-		this.refreshTimer = setTimeout(() => data.loadData(), 5000)
+		this.refreshTimer = setTimeout(() => background.historic.loadData(), 5000)
   }
 
   componentWillUnmount() {
@@ -34,10 +20,10 @@ class Popup extends Component {
   }
 
   render() {
-    if (background.data.loading === true)
+    if (background.historic.loading === true)
       return (<div className="loading">Loading...</div>)
 
-    return this.renderOrgList(background.data.orgs)
+    return this.renderOrgList(background.historic.orgs)
   }
 
   renderOrgList(orgs) {
@@ -99,7 +85,7 @@ class Popup extends Component {
   }
 
   renderRepoVisits(visits) {
-    let sortedVisits = Object.values(visits)
+    let sortedVisits = Object.keys(visits).map(k => visits[k])
     if (sortedVisits.length === 0) return
     sortedVisits.sort((a, b) => this.stringSort(a.title, b.title))
 

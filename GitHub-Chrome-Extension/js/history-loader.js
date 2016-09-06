@@ -63,8 +63,10 @@ export default class HistoryLoader {
     switch(v.section) {
       case 'pull':
         v.className = 'git-pull-request'
-        v.title = parts[1].replace('Pull Request #', 'PR ') + ' ' + parts[0]
-        return
+        if (parts.length > 1) {
+          v.title = parts[1].replace('Pull Request #', 'PR ') + ' ' + parts[0]
+          return
+        }
       case 'edit':
       case 'new':
         v.className = 'pencil'
