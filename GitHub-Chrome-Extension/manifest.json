@@ -1,8 +1,11 @@
 {
   "manifest_version": 2,
-  "name": "GitHub for Chrome",
-  "description": "Quickly navigate between your GitHub repositories.",
+  "name": "GitHub QuickNav for Chrome",
+  "description": "Quickly navigate around your GitHub repositories.",
   "version": "1.0",
+  "description": "Displays your GitHub browser history in an easy-to navigate format.
+  Not an official GitHub project. Created for Hack Week!",
+  "author": "Damien Guard",
   "icons": {
     "32": "images/github-32.png",
     "64": "images/github-64.png",
