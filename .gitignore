@@ -1,5 +1,5 @@
 # Build files
-GitHub-Chrome-Extension/Chrome/dist/*
+GitHub-Chrome-Extension/dist
 
 # npm
 npm-debug.log
