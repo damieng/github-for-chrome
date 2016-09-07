@@ -2,25 +2,26 @@ import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 import HistoryLoader from './history-loader'
 
-let background = chrome.extension.getBackgroundPage()
+const background = chrome.extension.getBackgroundPage()
 background.historic = background.historic || new HistoryLoader()
 
 class Popup extends Component {
   componentWillMount() {
     this.backgroundSubscription = background.addEventListener('onHistoryLoaded', (e) => this.forceUpdate())
-		this.refreshTimer = setTimeout(() => background.historic.loadData(), 5000)
+    background.lastPopup = this
+    if (background.historic.initialized !== true)
+      background.historic.initialize()
   }
 
   componentWillUnmount() {
     if (this.backgroundSubscription != null) {
-      this.background.removeEventListener('onHistoryLoaded', backgroundSubscription)
+      background.removeEventListener('onHistoryLoaded', backgroundSubscription)
       this.backgroundSubscription = null
     }
-		clearTimer(this.refreshTimer)
   }
 
   render() {
-    if (background.historic.loading === true)
+    if (background.historic.initialized === false)
       return (<div className="loading">Loading...</div>)
 
     return this.renderOrgList(background.historic.orgs)
@@ -99,9 +100,9 @@ class Popup extends Component {
   renderRepoVisit(v) {
 		const icon = v.className === undefined ? '' : <span className={'octicon octicon-' + v.className}></span>
 
-    return (<li key={v.url}>
+    return (<li key={v.url} title={v.originalTitle}>
 			{icon}
-			<a href={v.url} title={v.originalTitle} target="_blank">{v.title}</a>
+			<a href={v.url} title={v.url} target="_blank">{v.title}</a>
 		</li>)
   }
 

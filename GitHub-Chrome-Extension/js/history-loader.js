@@ -1,15 +1,12 @@
-var historyLoadedEvent = new Event('onHistoryLoaded')
-
 var atFullHash = /( at )([a-f0-9]{10})([a-f0-9]{30})/
 
-const ignoreTops = [ 'orgs', 'settings', 'login', 'blog' ]
+const ignoreTops = [ 'orgs', 'settings', 'login', 'blog', 'about' ]
 
 export default class HistoryLoader {
   constructor() {
     this.background = chrome.extension.getBackgroundPage()
     this.orgs = { }
-    this.loading = true
-    this.loadData()
+    this.initialized = false
   }
 
   getSearchCriteria() {
@@ -63,10 +60,8 @@ export default class HistoryLoader {
     switch(v.section) {
       case 'pull':
         v.className = 'git-pull-request'
-        if (parts.length > 1) {
-          v.title = parts[1].replace('Pull Request #', 'PR ') + ' ' + parts[0]
-          return
-        }
+        if (parts.length > 1) v.title = parts[1].replace('Pull Request #', 'PR ') + ' ' + parts[0]
+        return
       case 'edit':
       case 'new':
         v.className = 'pencil'
@@ -175,13 +170,13 @@ export default class HistoryLoader {
     }
   }
 
-  addVisit(v) {
+  addVisit(orgs, v) {
     let org = null
-    if (v.org in this.orgs) {
-      org = this.orgs[v.org]
+    if (v.org in orgs) {
+      org = orgs[v.org]
     } else {
       org = { orgName: v.org, repos: { } }
-      this.orgs[v.org] = org
+      orgs[v.org] = org
     }
 
     let repo = null
@@ -193,19 +188,22 @@ export default class HistoryLoader {
 
     if (v.section === undefined) return
     const cleanUrl = v.url.split('#')[0].split('?')[0]
-    if (!(cleanUrl in repo.visits)) {
-      repo.visits[cleanUrl] = v
-    }
+    repo.visits[cleanUrl] = v
   }
 
-  loadData() {
+  initialize() {
+    this.getHistoricVisits((o) => {
+      this.orgs = o
+      this.initialized = true
+      this.background.dispatchEvent(new Event('onHistoryLoaded'))
+    })
+  }
+
+  getHistoricVisits(callback) {
     chrome.history.search(this.getSearchCriteria(), (v) => {
-      this.loading = true
-      this.orgs = { }
-      v.map(v => this.buildVisit(v)).forEach(v => { if (v !== null) this.addVisit(v) })
-      historyLoadedEvent.data = this
-      this.loading = false
-      this.background.dispatchEvent(historyLoadedEvent)
+      const orgs = { }
+      v.map(v => this.buildVisit(v)).forEach(v => { if (v !== null) this.addVisit(orgs, v) })
+      callback(orgs)
     })
   }
 }

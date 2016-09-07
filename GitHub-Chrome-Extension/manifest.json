@@ -19,6 +19,8 @@
     ]
   },
   "permissions": [
-    "history"
+    "history",
+    "webNavigation",
+    "tabs"
   ]
 }

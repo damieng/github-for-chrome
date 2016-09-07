@@ -88,23 +88,21 @@
 	      this.backgroundSubscription = background.addEventListener('onHistoryLoaded', function (e) {
 	        return _this2.forceUpdate();
 	      });
-	      this.refreshTimer = setTimeout(function () {
-	        return background.historic.loadData();
-	      }, 5000);
+	      background.lastPopup = this;
+	      if (background.historic.initialized !== true) background.historic.initialize();
 	    }
 	  }, {
 	    key: 'componentWillUnmount',
 	    value: function componentWillUnmount() {
 	      if (this.backgroundSubscription != null) {
-	        this.background.removeEventListener('onHistoryLoaded', backgroundSubscription);
+	        background.removeEventListener('onHistoryLoaded', backgroundSubscription);
 	        this.backgroundSubscription = null;
 	      }
-	      clearTimer(this.refreshTimer);
 	    }
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      if (background.historic.loading === true) return _react2.default.createElement(
+	      if (background.historic.initialized === false) return _react2.default.createElement(
 	        'div',
 	        { className: 'loading' },
 	        'Loading...'
@@ -216,11 +214,11 @@
 	
 	      return _react2.default.createElement(
 	        'li',
-	        { key: v.url },
+	        { key: v.url, title: v.originalTitle },
 	        icon,
 	        _react2.default.createElement(
 	          'a',
-	          { href: v.url, title: v.originalTitle, target: '_blank' },
+	          { href: v.url, title: v.url, target: '_blank' },
 	          v.title
 	        )
 	      );
@@ -21631,11 +21629,9 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	var historyLoadedEvent = new Event('onHistoryLoaded');
-	
 	var atFullHash = /( at )([a-f0-9]{10})([a-f0-9]{30})/;
 	
-	var ignoreTops = ['orgs', 'settings', 'login', 'blog'];
+	var ignoreTops = ['orgs', 'settings', 'login', 'blog', 'about'];
 	
 	var HistoryLoader = function () {
 	  function HistoryLoader() {
@@ -21643,8 +21639,7 @@
 	
 	    this.background = chrome.extension.getBackgroundPage();
 	    this.orgs = {};
-	    this.loading = true;
-	    this.loadData();
+	    this.initialized = false;
 	  }
 	
 	  _createClass(HistoryLoader, [{
@@ -21701,10 +21696,8 @@
 	      switch (v.section) {
 	        case 'pull':
 	          v.className = 'git-pull-request';
-	          if (parts.length > 1) {
-	            v.title = parts[1].replace('Pull Request #', 'PR ') + ' ' + parts[0];
-	            return;
-	          }
+	          if (parts.length > 1) v.title = parts[1].replace('Pull Request #', 'PR ') + ' ' + parts[0];
+	          return;
 	        case 'edit':
 	        case 'new':
 	          v.className = 'pencil';
@@ -21817,13 +21810,13 @@
 	    }
 	  }, {
 	    key: 'addVisit',
-	    value: function addVisit(v) {
+	    value: function addVisit(orgs, v) {
 	      var org = null;
-	      if (v.org in this.orgs) {
-	        org = this.orgs[v.org];
+	      if (v.org in orgs) {
+	        org = orgs[v.org];
 	      } else {
 	        org = { orgName: v.org, repos: {} };
-	        this.orgs[v.org] = org;
+	        orgs[v.org] = org;
 	      }
 	
 	      var repo = null;
@@ -21835,26 +21828,32 @@
 	
 	      if (v.section === undefined) return;
 	      var cleanUrl = v.url.split('#')[0].split('?')[0];
-	      if (!(cleanUrl in repo.visits)) {
-	        repo.visits[cleanUrl] = v;
-	      }
+	      repo.visits[cleanUrl] = v;
 	    }
 	  }, {
-	    key: 'loadData',
-	    value: function loadData() {
+	    key: 'initialize',
+	    value: function initialize() {
 	      var _this = this;
 	
+	      this.getHistoricVisits(function (o) {
+	        _this.orgs = o;
+	        _this.initialized = true;
+	        _this.background.dispatchEvent(new Event('onHistoryLoaded'));
+	      });
+	    }
+	  }, {
+	    key: 'getHistoricVisits',
+	    value: function getHistoricVisits(callback) {
+	      var _this2 = this;
+	
 	      chrome.history.search(this.getSearchCriteria(), function (v) {
-	        _this.loading = true;
-	        _this.orgs = {};
+	        var orgs = {};
 	        v.map(function (v) {
-	          return _this.buildVisit(v);
+	          return _this2.buildVisit(v);
 	        }).forEach(function (v) {
-	          if (v !== null) _this.addVisit(v);
+	          if (v !== null) _this2.addVisit(orgs, v);
 	        });
-	        historyLoadedEvent.data = _this;
-	        _this.loading = false;
-	        _this.background.dispatchEvent(historyLoadedEvent);
+	        callback(orgs);
 	      });
 	    }
 	  }]);
