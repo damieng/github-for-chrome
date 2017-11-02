@@ -122,6 +122,7 @@ export default class HistoryLoader {
       case 'tree':
         const filePathParts = v.remaining.split('/')
         v.title = `${filePathParts.slice(1).join('/')} at ${filePathParts[0]}`
+        break
       case 'blob':
       case 'find':
         if (parts[0].startsWith(v.repo + '/'))

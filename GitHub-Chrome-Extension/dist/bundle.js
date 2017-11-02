@@ -21757,6 +21757,7 @@
 	        case 'tree':
 	          var filePathParts = v.remaining.split('/');
 	          v.title = filePathParts.slice(1).join('/') + ' at ' + filePathParts[0];
+	          break;
 	        case 'blob':
 	        case 'find':
 	          if (parts[0].startsWith(v.repo + '/')) parts[0] = parts[0].slice(v.repo.length + 1);
